@@ -1,0 +1,73 @@
+{
+  "market_as_of": "2026-10-29",
+  "delivery_reference": "2027-01 through2027-12",
+  "cities": {
+    "Tulsa": {
+      "station": "USW00013968",
+      "source_years": [
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2023,
+        2024,
+        2025
+      ],
+      "reference_annual_hdd": 3171.8888888888887,
+      "source_sha256": "e16d407159201a476a6757579b33f819deac2dbb6834261c3ae482cb53a71f0a",
+      "weather_source": "https://www.ncei.noaa.gov/access/services/data/v1",
+      "exclusions": "March2022flagged;entire2022excludedfromannualbootstrap",
+      "market_available": "2027referencecurve"
+    },
+    "Omaha": {
+      "station": "USW00014942",
+      "source_years": [
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "reference_annual_hdd": 5651.0,
+      "source_sha256": "d2cfa455a4d12fe897260a537c6e8d2456ba2deb389271d9d4c10654fd5324f8",
+      "weather_source": "https://www.ncei.noaa.gov/access/services/data/v1",
+      "exclusions": "No full years excluded by recorded quality check",
+      "market_available": "User input required"
+    },
+    "Columbus": {
+      "station": "USW00014821",
+      "source_years": [
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "reference_annual_hdd": 4856.9,
+      "source_sha256": "1b1f9d647f52d524a2c2c88f542482875577c870e5faeccbf4f4f05cd57b6f21",
+      "weather_source": "https://www.ncei.noaa.gov/access/services/data/v1",
+      "exclusions": "No full years excluded by recorded quality check",
+      "market_available": "User input required"
+    }
+  },
+  "hh_spot_source": "https://www.eia.gov/dnav/ng/hist/rngwhhdm.htm",
+  "market_reference": "Archived October 29, 2026 settlements plus regional pipeline basis proxy; indicative, not executable. Actual customer delivery route unconfirmed.",
+  "demand_reference": "Selected public manufacturing energy-assessment sample: 14 positive-gas records, median 6104 MMBtu/year rounded to6100; not a representative industry or Tulsa average.",
+  "assumed_weather_sensitive_fraction": 0.4,
+  "credit_policy": "Illustrative analyst-selected conservative thresholds, not rating-agency calibration",
+  "fuel": "Percentage and calculation base unverified; no default numeric rate",
+  "risk": "Base-commodity matched monthly hedge-consistency test only; no calibrated daily/monthly residual or default premium",
+  "basis_valuation_date_caveat": "Monthly basis file has no printed valuation date. Three seasonal averages reconcile to the October 29 dated seasonal row; date is corroborated, not directly printed."
+}

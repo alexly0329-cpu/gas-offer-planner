@@ -1,0 +1,37 @@
+[client]
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#7C3AED"
+backgroundColor = "#FAF9FD"
+secondaryBackgroundColor = "#F0EDF5"
+textColor = "#19161F"
+font = "sans-serif"
+headingFont = "sans-serif"
+baseFontSize = 16
+baseRadius = "large"
+buttonRadius = "full"
+borderColor = "#E4DFEB"
+dataframeBorderColor = "#E4DFEB"
+dataframeHeaderBackgroundColor = "#F4F1F8"
+dataframeHeaderTextColor = "#484052"
+showWidgetBorder = true
+showSidebarBorder = false
+linkColor = "#6D28D9"
+chartCategoricalColors = ["#7C3AED", "#B49AF5", "#416DAB", "#3E8C79", "#B77936", "#BA6482"]
+
+[theme.sidebar]
+primaryColor = "#B79CFB"
+backgroundColor = "#101014"
+secondaryBackgroundColor = "#23212B"
+textColor = "#F0EDF7"
+font = "sans-serif"
+headingFont = "sans-serif"
+borderColor = "#3D374B"
+linkColor = "#CDB9FF"
+baseRadius = "large"
+buttonRadius = "full"
