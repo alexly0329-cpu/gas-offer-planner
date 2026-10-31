@@ -1,27 +1,34 @@
-# Hosting the planner
+# Netlify deployment
 
-## Current version
+The browser planner is served from `public/`. It preserves the six guided steps, estimated financial logic, charts and two anonymous PDFs. Entries and PDF generation stay on the visitor's device. No Python server, customer database, analytics library or external pricing API is needed.
 
-This repository contains the tested Python/Streamlit planner. It runs locally with Python 3.12 and the pinned requirements. The entrypoint is `app.py`. `Start.command` is only a local Mac launcher.
+## Settings
 
-The current version is **not directly deployable on Netlify**. It needs a persistent Python server and WebSocket sessions. Netlify can use Python during a build, but this does not provide a running Streamlit server. A `netlify.toml` file alone cannot solve that difference.
+The root `netlify.toml` sets build command `node scripts/check-web.mjs`, publish directory `public`, and Node.js24. Keep the repository base at its root. File-based settings override matching Netlify UI settings. Pushing `main` triggers the existing connected production deployment. Do not publish the repository root: the Python files are calculation references, not browser entrypoints.
 
-References: [Streamlit architecture](https://docs.streamlit.io/develop/concepts/architecture/architecture), [Netlify Functions](https://docs.netlify.com/build/functions/overview/), [Netlify build dependencies](https://docs.netlify.com/build/configure-builds/manage-dependencies/).
+## Local preview and checks
 
-## Netlify target
+```sh
+node --test web-tests/*.test.mjs
+node scripts/check-web.mjs
+python3 -m http.server 8503 --directory public
+```
 
-Netlify is the requested deployment target. A conversion is being discussed; it is not included in this version.
+Open `http://localhost:8503`. Opening index.html directly as a local file is not supported because modules and reference-data loading need a web server. The original Streamlit app remains available using Start.command or README.md instructions.
 
-The proposed approach is a normal browser app that preserves the six steps, visual style, fixed-block contract logic, financial calculations, credit screen and two anonymous PDFs. Keep the Python implementation and its tests as the reference while validating the browser version against the same calculation cases. The conversion must prove pricing, cash timing, missing-input handling, saved-offer stress, credit exposure and PDF confidentiality before launch.
+To regenerate normalized data and exact fixed-seed scenario weights after changing the Python reference/data, use the pinned Python environment:
 
-No financial features, accounts or customer database need to be added just to support a portfolio demonstration. A private GitHub repository does not make a publicly deployed website private.
+```sh
+python scripts/export-browser-data.py
+python scripts/export-browser-data.py --check
+```
 
-## Before a public launch
+The browser computes results for weighted counts of the same100,000seeded paired-year draws. It does not download a Python runtime or replace them with a different random sample. The PDF library and license are served locally.
 
-- Finish and verify the chosen Netlify conversion; this branch is a working reference, not a Netlify build.
-- Confirm redistribution rights or replace the bundled third-party market reference with a user-supplied curve. See [data notes](DATA_SOURCES.md).
-- Keep estimated demand, source dates, omitted costs and Pending inputs visible.
-- Use an anonymous demonstration case. Current software has no customer authentication or persistent customer database.
-- Verify both PDFs and the six-step flow on the deployed URL.
+## Data and scope
 
-The current Streamlit app processes inputs on its Python host. Its PDF generator excludes internal names and arbitrary source notes; that does not make the underlying host a private financial-data service. No live pricing API or runtime credentials are required.
+Confirm data-use permissions and refresh the market curve before a commercial quote. Regional basis remains a delivery-route proxy with a corroborated date; actual route matching needs confirmation. Customer demand remains estimated until monthly bills and matched weather validate it. See DATA_SOURCES.md.
+
+This is a planning demonstration, not a firm quote, data vault or trading system. Simplified operating funding excludes daily hedge collateral and unsupported default-loss pricing. A private source repository does not make a public website private.
+
+References: [Netlify configuration](https://docs.netlify.com/build/configure-builds/file-based-configuration/), [original Streamlit architecture](https://docs.streamlit.io/develop/concepts/architecture/architecture).

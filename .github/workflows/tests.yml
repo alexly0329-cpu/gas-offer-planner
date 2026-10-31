@@ -9,6 +9,18 @@ permissions:
   contents: read
 
 jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Verify browser calculations and anonymous reports
+        run: node --test web-tests/*.test.mjs
+      - name: Verify Netlify publish assets
+        run: node scripts/check-web.mjs
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -25,5 +37,7 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
       - name: Check dependency compatibility
         run: python -m pip check
+      - name: Check browser reference data against Python
+        run: python scripts/export-browser-data.py --check
       - name: Run planner tests
         run: python -m unittest discover -v

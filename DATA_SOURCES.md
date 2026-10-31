@@ -12,3 +12,5 @@ The repository contains an estimated operating profile and normalized historical
 The market reference is an indicative archived case, not a live executable quote. It has no recorded permission for public redistribution in this project. Before including it in a public site or public repository, verify the applicable provider terms or replace it with a properly licensed/user-supplied curve. The same review applies to derived market-price examples and PDFs.
 
 No blanket open-source license is granted over third-party data by this repository. Private source backup and permission to redistribute market data publicly are separate decisions.
+
+`public/data/model.json` mirrors the same normalized case data and contains weighted counts of the exact100,000paired-year NumPy draws with seed20261031. `scripts/export-browser-data.py` regenerates it. No additional market observations or customer records are introduced. The same data-use limitations apply to browser assets and derived PDF examples.

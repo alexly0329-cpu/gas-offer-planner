@@ -1,10 +1,12 @@
 # Project 2 — Gas Offer Planner
 
-A Streamlit portfolio app for a supplier quoting fixed monthly natural-gas blocks to an HVAC equipment manufacturer using an estimated operating profile. It demonstrates price, hedge planning, weather/price scenarios, cash timing, credit exposure and anonymous PDF proposals.
+A supplier-side natural-gas portfolio planner with a Netlify-compatible browser app and a Python/Streamlit calculation reference. It quotes fixed monthly gas blocks to an HVAC equipment manufacturer using an estimated operating profile, with pricing, hedges, cash timing, credit exposure and two anonymous PDF formats.
 
-**Hosting status:** this is the working Python reference version. Netlify is the intended target, but the app needs conversion before it can run there. See [deployment notes](DEPLOYMENT.md) and [data-release notes](DATA_SOURCES.md).
+**Browser version:** Netlify publishes only `public/`, with `public/index.html` as its entrypoint. Calculations and PDFs run on the visitor's device. See [deployment notes](DEPLOYMENT.md) and [data-release notes](DATA_SOURCES.md).
 
-## Open
+For a local browser preview, run `python3 -m http.server 8503 --directory public` and open `http://localhost:8503`. No API keys, database or front-end package installation are required. The exact fixed-seed historical scenario counts preserve the Python model's existing risk calculation. Entries last for the page session and reset on refresh.
+
+## Open the Python reference
 
 Open http://127.0.0.1:8501 while the local server is running. To restart on a Mac, double-click **Start.command**. The portable launcher creates `.venv` and installs `requirements.txt` when needed. The verified environment is Python 3.12 with the pinned package versions. Initial installation needs internet. Local calculations and PDF creation then work offline; the launcher listens only on this computer. A hosted Streamlit deployment instead processes inputs on its Python server and requires a network connection.
 
@@ -91,6 +93,8 @@ Verification:
 
 Tests cover financial formulas, missing/invalid inputs, price and hedge reconciliations, frozen contracts, city/term data boundaries, credit state and PDF anonymity. Browser and rendered PDF checks supplement the automated tests.
 
-## Interface design
+## Browser verification and design
+
+The browser implementation uses `public/app.mjs`, `public/model.mjs`, `public/reports.mjs` and `public/styles.css`. Its parity fixtures are generated from the Python reference and cover pricing, frozen offers, fuel conventions, credit, payment timing and cash exposure. Run `node --test web-tests/*.test.mjs` for browser-model/PDF/static-deployment checks. GitHub Actions runs both Python and browser checks. Browser dependency licensing is in THIRD_PARTY_NOTICES.md.
 
 The local interface and PDF take visual inspiration from [Gladia](https://www.gladia.io/): a pale lavender hero, regular-weight typography, a dark rounded header and assumptions rail, pill navigation, and restrained purple accents. `ui.css` and `.streamlit/config.toml` provide the styling locally using system fonts. The six-step sequence uses local CSS motion, with keyboard navigation, reduced-motion support and narrow-screen layouts. The design refresh preserves the pricing, credit, risk and PDF workflows.
