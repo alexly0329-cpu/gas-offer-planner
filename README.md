@@ -92,9 +92,3 @@ Verification:
 ```
 
 Tests cover financial formulas, missing/invalid inputs, price and hedge reconciliations, frozen contracts, city/term data boundaries, credit state and PDF anonymity. Browser and rendered PDF checks supplement the automated tests.
-
-## Browser verification and design
-
-The browser implementation uses `public/app.mjs`, `public/model.mjs`, `public/reports.mjs` and `public/styles.css`. Its parity fixtures are generated from the Python reference and cover pricing, frozen offers, fuel conventions, credit, payment timing and cash exposure. Run `node --test web-tests/*.test.mjs` for browser-model/PDF/static-deployment checks. GitHub Actions runs both Python and browser checks. Browser dependency licensing is in THIRD_PARTY_NOTICES.md.
-
-The local interface and PDF take visual inspiration from [Gladia](https://www.gladia.io/): a pale lavender hero, regular-weight typography, a dark rounded header and assumptions rail, pill navigation, and restrained purple accents. `ui.css` and `.streamlit/config.toml` provide the styling locally using system fonts. The six-step sequence uses local CSS motion, with keyboard navigation, reduced-motion support and narrow-screen layouts. The design refresh preserves the pricing, credit, risk and PDF workflows.
