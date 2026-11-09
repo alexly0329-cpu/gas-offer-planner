@@ -1,6 +1,2 @@
 [build]
-  command = "node scripts/check-web.mjs"
   publish = "public"
-
-[build.environment]
-  NODE_VERSION = "24"
