@@ -1,4 +1,4 @@
-# Project 2 — Gas Offer Planner
+# Project — Gas Offer Planner
 
 A supplier-side natural-gas portfolio planner with a Netlify-compatible browser app and a Python/Streamlit calculation reference. It quotes fixed monthly gas blocks to an HVAC equipment manufacturer using an estimated operating profile, with pricing, hedges, cash timing, credit exposure and two anonymous PDF formats.
 
