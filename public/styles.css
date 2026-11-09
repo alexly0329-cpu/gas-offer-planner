@@ -206,3 +206,21 @@ td input{width:115px;min-width:90px;border:1px solid var(--line);border-radius:8
  .hero .meta{gap:5px}.meta span{font-size:.64rem;padding:3px 8px}.requirements{margin:16px 0 20px}.radio-options{gap:12px 17px}.chart{padding:10px}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* offer book */
+.book-view .journey{display:none}
+.step-nav .nav-sep{height:1px;background:var(--line);margin:8px 4px}
+.step-nav [data-view]{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.step-nav .count{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--soft);border:1px solid var(--line);font-size:.72rem;text-align:center;color:var(--ink-2)}
+.step-nav button[aria-current=page]{background:var(--soft);box-shadow:inset 3px 0 0 var(--accent);color:var(--ink);font-weight:600}
+.step-nav button[aria-current=page] .count{background:var(--surface)}
+.metric .sub{margin-top:6px;font-size:.74rem;color:var(--accent)}
+.metric.dark .sub{color:#ffb4bb}
+.book-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.book-table tbody tr{cursor:pointer}
+.book-table tbody tr:focus-visible{outline:2px solid var(--accent-2);outline-offset:-2px}
+.book-table tfoot td{font-weight:600;background:var(--soft);border-top:1px solid var(--line);border-bottom:0}
+.book-table small{display:inline;margin-left:6px;font-size:.7rem}
+.tag.example{padding:2px 8px;margin-left:6px;font-size:.66rem;font-weight:600;color:var(--accent);background:#fbeaec;border-color:#efc4c9}
+.book-save{border-top:1px solid var(--line);margin-top:20px;padding-top:4px}
+.book-save h3{margin:14px 0 6px}
+@media(max-width:760px){.step-nav .nav-sep{display:none}.step-nav [data-view]{flex-shrink:0;white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:9px 12px;min-height:38px;font-size:.72rem}.step-nav button[aria-current=page]{box-shadow:none;background:var(--ink);color:#fff;border-color:var(--ink)}.step-nav button[aria-current=page] .count{background:transparent;color:#fff}}

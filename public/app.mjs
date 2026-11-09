@@ -1,5 +1,6 @@
 import {loadCase, validateCurve, buildOffer, stressOffer, simulateJointRisk, ratiosFromFinancials, assessCredit, financialPlan, priceBuild, priceBuildBars} from './model.mjs';
 import {downloadProposal} from './reports.mjs';
+import {EXAMPLE_NOTE, makeEntry, totals, bookCsv, monthlyCsv, sampleEntries} from './book.mjs';
 
 const app = document.getElementById('app');
 const steps = ['Customer','Gas & weather','Market prices','Supplier costs','Credit','Review & PDF'];
@@ -21,7 +22,7 @@ const state = {
   costs:{fuel_pct:null,fuel_basis:null,supplier_fee:null,financing:null,residual_risk:null,credit_allowance:null},
   customer_days:null,supplier_days:null,credit_format:'amounts',amounts:Object.fromEntries(Object.keys(amountFields).map(k=>[k,null])),
   ratios:Object.fromEntries(Object.keys(ratioFields).map(k=>[k,null])),unsecured_limit:null,additional_exposure:null,credit_reviewed:false,
-  payment_delay_days:0,context_version:0,upload_sequence:0,curves:{},commercial:{},frozen:null,frozen_context:null,frozen_explicit:false,tab:'Offer',upload_error:'',notice:''
+  payment_delay_days:0,context_version:0,upload_sequence:0,curves:{},commercial:{},frozen:null,frozen_context:null,frozen_explicit:false,tab:'Offer',upload_error:'',notice:'',view:'steps',book:[],book_prompt:false,book_msg:''
 };
 const locked = () => state.mode === 'existing';
 const contextKey = () => `${state.city}_${state.term}`;
@@ -303,8 +304,59 @@ function stageSix(d) {
  details('readiness-panel','Review input status and outstanding items',table(['Review item','Status'],status)+caption('Complete cost assumptions do not make a firm quote. Customer demand is still estimated, not validated against monthly bills.'))+
  `<div class="tabs" role="tablist" aria-label="Review sections">${Object.keys(panels).map(t=>`<button id="tab-${t.replace(/\W/g,'')}" role="tab" data-tab="${esc(t)}" aria-selected="${state.tab===t}" aria-controls="review-panel">${esc(t)}</button>`).join('')}</div>`+
  `<section class="tab-panel" role="tabpanel" id="review-panel" aria-labelledby="tab-${state.tab.replace(/\W/g,'')}">${panels[state.tab](d)}</section>`+
- `<div class="proposal-panel"><div class="section-label">YOUR PROPOSAL</div><h3>The right detail for each reader.</h3><p>The customer proposal shows the offer and its conditions. The internal review adds costs, financial planning, hedges and credit. Both omit names and private source notes.</p><div class="button-row"><button class="button primary" id="download-customer">Download customer proposal</button><button class="button" id="download-internal">Download internal financial review</button></div><div id="download-status" class="caption" role="status"></div></div>`+
+ `<div class="proposal-panel"><div class="section-label">YOUR PROPOSAL</div><h3>The right detail for each reader.</h3><p>The customer proposal shows the offer and its conditions. The internal review adds costs, financial planning, hedges and credit. Both omit names and private source notes.</p><div class="button-row"><button class="button primary" id="download-customer">Download customer proposal</button><button class="button" id="download-internal">Download internal financial review</button></div><div id="download-status" class="caption" role="status"></div><div class="book-save"><h3>Keep this offer</h3><p>Save a snapshot to the offer book to compare it with other offers.</p><div class="button-row"><button class="button" id="save-book"${locked()?' disabled':''}>Save to offer book</button></div>${locked()?caption('Choose New offer to save. A saved stress test is not added to the book.'):''}<div id="book-status" role="status">${bookStatus()}</div></div></div>`+
  `<div class="navigation"><button class="button" data-step="5">Back to credit</button></div>`;
+}
+/* Offer book: in-memory only, like the rest of the page session. */
+let bookSeq=0;
+function captureInputs() {
+ const m=marketState(current.case),c=commercialState();
+ return {customer:state.customer,city:state.city,term:state.term,demand_basis:state.demand_basis,annual_gas:state.annual_gas,weather_pct:state.weather_pct,margin:state.margin,
+  costs:clone(state.costs),customer_days:state.customer_days,supplier_days:state.supplier_days,credit_format:state.credit_format,amounts:clone(state.amounts),ratios:clone(state.ratios),
+  unsecured_limit:state.unsecured_limit,additional_exposure:state.additional_exposure,credit_reviewed:state.credit_reviewed,payment_delay_days:state.payment_delay_days,
+  curve:clone(m.curve),market_source:m.source,market_date:m.date,commercial:clone(c)};
+}
+function saveToBook(mode) {
+ if(locked()||!current.offer||current.errors.length)return;
+ const inputs=captureInputs(),key=inputs.customer.trim().toLowerCase();
+ const index=state.book.findIndex(e=>e.row.customer.trim().toLowerCase()===key);
+ if(index>=0&&!mode){state.book_prompt=true;state.book_msg='';render();return;}
+ let entry;
+ try{entry=makeEntry(data,inputs,{id:`offer-${++bookSeq}`});}
+ catch(error){state.book_prompt=false;state.book_msg='Could not save: '+error.message;render();return;}
+ if(index>=0&&mode==='replace')state.book[index]=entry;else state.book.push(entry);
+ state.book_prompt=false;state.book_msg=`${mode==='replace'?'Replaced':'Saved'} “${inputs.customer}” in the offer book (${state.book.length} ${state.book.length===1?'offer':'offers'}).`;
+ render();
+}
+function bookStatus() {
+ if(state.book_prompt)return `<div class="notice warn" role="alert">An offer for “${esc(state.customer.trim())}” is already in the offer book. Replace it, or add this as a new row?<div class="button-row"><button class="button primary" id="book-replace">Replace</button><button class="button" id="book-add">Add as new row</button><button class="button" id="book-cancel">Cancel</button></div></div>`;
+ return state.book_msg?notice(state.book_msg,state.book_msg.startsWith('Could not')?'error':'success'):'';
+}
+function reopenEntry(entry) {
+ const i=clone(entry.inputs);
+ Object.assign(state,{mode:'new',customer:i.customer,city:i.city,term:i.term,demand_basis:i.demand_basis,annual_gas:i.annual_gas,weather_pct:i.weather_pct,margin:i.margin,costs:i.costs,
+  customer_days:i.customer_days,supplier_days:i.supplier_days,credit_format:i.credit_format,amounts:i.amounts,ratios:i.ratios,unsecured_limit:i.unsecured_limit,
+  additional_exposure:i.additional_exposure,credit_reviewed:i.credit_reviewed,payment_delay_days:i.payment_delay_days});
+ state.curves[`${i.city}_${i.term}`]={curve:i.curve??clone(loadCase(data,i.city,i.term).market_curve),source:i.market_source??'',date:i.market_date??''};
+ state.commercial[`${i.customer}|${i.city}|${i.term}`]=clone(i.commercial);
+ state.context_version++;state.upload_error='';state.view='steps';state.step=6;state.furthest=6;state.tab='Offer';state.book_msg='';state.book_prompt=false;
+ state.notice=`Reopened “${i.customer}” from the offer book.`;
+ render({focusHeading:true});
+}
+function bookView() {
+ const t=totals(state.book),examples=state.book.some(e=>e.example);
+ const card=(label,x,format,dark=false)=>`<div class="metric${dark?' dark':''}" data-metric="${esc(label)}"><div class="label">${esc(label)}</div><div class="value">${esc(x.value===null?'Pending':format(x.value))}</div>${x.pending?`<div class="sub">${x.pending} of ${x.count} offers incomplete</div>`:''}</div>`;
+ const cell=(x,format)=>x.value===null?'Pending':format(x.value);
+ const rows=state.book.map(e=>{const r=e.row;return `<tr tabindex="0" role="button" data-book-id="${esc(e.id)}" aria-label="Reopen ${esc(r.customer)} in the guided steps"><td>${esc(r.customer)}${e.example?' <span class="tag example">Example</span>':''}</td><td>${esc(r.city==='Columbus'?'Columbus, Ohio':r.city)}</td><td>${r.term} months</td><td class="num">${number(r.annual_mmbtu,1)}</td><td class="num">${r.price===null?'Pending':esc(money(r.price))+(r.price_partial?' <small>Partial subtotal</small>':'')}</td><td class="num">${esc(money(r.margin_total,2))}</td><td class="num">${esc(money(r.margin_per))}</td><td>${esc(r.credit_result??'Pending')}</td><td class="num">${esc(money(r.exposure,2))}</td><td>${esc(r.valid_until??'Pending')}</td><td><button class="button small" data-book-remove="${esc(e.id)}" aria-label="Remove ${esc(r.customer)} from the offer book">Remove</button></td></tr>`;}).join('');
+ const head=['Customer label','City','Term','Annual MMBtu','Offer price ($/MMBtu)','Margin ($, full term)','Margin ($/MMBtu)','Credit result','Peak credit exposure ($)','Quote valid until',''];
+ const foot=`<tfoot><tr><td>Total (${t.count} ${t.count===1?'offer':'offers'})</td><td></td><td></td><td class="num">${esc(cell(t.annual_mmbtu,v=>number(v,1)))}</td><td></td><td class="num">${esc(cell(t.margin_total,v=>money(v,2)))}</td><td></td><td></td><td class="num">${esc(cell(t.exposure,v=>money(v,2)))}</td><td></td><td></td></tr></tfoot>`;
+ return `<div class="stage-kicker">OFFER BOOK</div><h2 id="stage-title" tabindex="-1">Offer book</h2><p class="stage-description">Compare saved offers side by side. Select a row to reopen it in the guided steps.</p>`+
+  `<div class="metrics three">${card('Total annual volume (MMBtu)',t.annual_mmbtu,v=>number(v,1),true)}${card('Total margin ($, full term)',t.margin_total,v=>money(v,2))}${card('Total credit exposure ($)',t.exposure,v=>money(v,2))}</div>`+
+  (t.incomplete?caption(`${t.incomplete} of ${t.count} offers are incomplete (a Pending value in at least one column). A total that includes a Pending value shows Pending.`):'')+
+  `<div class="button-row"><button class="button primary" id="book-csv"${state.book.length?'':' disabled'}>Download book (CSV)</button><button class="button" id="book-monthly-csv"${state.book.length?'':' disabled'}>Download monthly detail (CSV)</button><button class="button" id="book-clear-examples"${examples?'':' disabled'}>Clear examples</button></div>`+
+  (examples?notice(EXAMPLE_NOTE):'')+
+  (state.book.length?`<div class="table-wrap"><table class="book-table"><thead><tr>${head.map(h=>`<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody>${foot}</table></div>`:`<div class="empty">The offer book is empty. Finish an offer, then select “Save to offer book” in step 6.</div>`)+
+  caption('Margin and exposure are for the full term; annual MMBtu is the proposed blocks per year. The book is kept only for this page session: refreshing resets it.');
 }
 let current;
 function render({focusHeading=false}={}) {
@@ -316,9 +368,9 @@ function render({focusHeading=false}={}) {
  const d=current;
  const stage=[null,stageOne,stageTwo,stageThree,stageFour,stageFive,stageSix][state.step];
  let body;
- try {body=stage(d);} catch(error){body=notice('Check the inputs before continuing. '+error.message,'error')+navigate(state.step,'Continue',true);}
+ try {body=state.view==='book'?bookView():stage(d);} catch(error){body=notice('Check the inputs before continuing. '+error.message,'error')+navigate(state.step,'Continue',true);}
  app.setAttribute('aria-busy','false');
- app.innerHTML=`<div class="workspace"><aside class="sidebar" aria-label="Planner navigation"><div class="section-label">YOUR JOURNEY</div><h2>Build your offer</h2><fieldset class="purpose"><legend>Purpose</legend><label><input type="radio" name="mode" value="new"${!locked()?' checked':''}>New offer</label><label><input type="radio" name="mode" value="existing"${locked()?' checked':''}>Test existing offer</label></fieldset><p class="caption">Follow the six steps. You can revisit any step you have reached.</p><div class="sidebar-progress"><strong>Step ${state.step} of 6</strong><div class="progress-track" role="progressbar" aria-valuemin="1" aria-valuemax="6" aria-valuenow="${state.step}" aria-label="Current step"><div class="progress-fill" style="width:${(state.step-1)*20}%"></div></div></div><nav class="step-nav" aria-label="Input steps">${steps.map((t,i)=>`<button data-step="${i+1}"${state.step===i+1?' aria-current="step"':''}${i+1>state.furthest||(i+1>1&&!state.customer.trim())||(i+1>3&&d.market_error)?' disabled':''}>${String(i+1).padStart(2,'0')} ${esc(t)}</button>`).join('')}</nav><p class="sidebar-footer">Missing information can stay pending. The review shows what still needs confirmation.</p></aside><main class="main"><div class="brandbar"><div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Client Energy Solutions</div><div class="brand-note"><span>Supplier workspace</span><span class="tag">Estimated profile</span></div></div><section class="hero${state.step>1?' compact':''}" aria-label="Gas offer workspace"><div class="hero-content"><div class="eyebrow">NATURAL GAS / COMMERCIAL &amp; INDUSTRIAL</div><h1>Gas Offer Planner</h1><p>From market inputs to a <span class="accent">clearer gas offer.</span></p><div class="meta"><span>${esc(state.city==='Columbus'?'Columbus, Ohio':state.city)}</span><span>${state.term} months · Jan 2027 start</span><span>${state.weather_pct>0?'+':''}${state.weather_pct}% assumed HDD</span></div></div><div class="orbit" aria-hidden="true"><i></i><i></i><i></i></div></section><div class="journey" role="list" aria-label="Input sequence">${steps.map((t,i)=>`<div class="journey-item ${i+1===state.step?'current':i+1<state.step?'reached':'upcoming'}" role="listitem"${i+1===state.step?' aria-current="step"':''}><span class="journey-number">${String(i+1).padStart(2,'0')}</span><span>${esc(t)}</span></div>`).join('')}</div><section id="stage" class="stage" aria-labelledby="stage-title" data-step="${state.step}">${state.notice?notice(state.notice,'success'):''}${body}</section><p class="page-footer">Estimated operating profile · All calculations and PDFs run on your device. Entries are kept only for this page session; refreshing resets them. No trades or live market requests.</p></main></div>`;
+ app.innerHTML=`<div class="workspace${state.view==='book'?' book-view':''}"><aside class="sidebar" aria-label="Planner navigation"><div class="section-label">YOUR JOURNEY</div><h2>Build your offer</h2><fieldset class="purpose"><legend>Purpose</legend><label><input type="radio" name="mode" value="new"${!locked()?' checked':''}>New offer</label><label><input type="radio" name="mode" value="existing"${locked()?' checked':''}>Test existing offer</label></fieldset><p class="caption">Follow the six steps. You can revisit any step you have reached.</p><div class="sidebar-progress"><strong>Step ${state.step} of 6</strong><div class="progress-track" role="progressbar" aria-valuemin="1" aria-valuemax="6" aria-valuenow="${state.step}" aria-label="Current step"><div class="progress-fill" style="width:${(state.step-1)*20}%"></div></div></div><nav class="step-nav" aria-label="Input steps">${steps.map((t,i)=>`<button data-step="${i+1}"${state.step===i+1&&state.view!=='book'?' aria-current="step"':''}${i+1>state.furthest||(i+1>1&&!state.customer.trim())||(i+1>3&&d.market_error)?' disabled':''}>${String(i+1).padStart(2,'0')} ${esc(t)}</button>`).join('')}<span class="nav-sep" aria-hidden="true"></span><button data-view="book"${state.view==='book'?' aria-current="page"':''}>Offer book <span class="count">${state.book.length}</span></button></nav><p class="sidebar-footer">Missing information can stay pending. The review shows what still needs confirmation.</p></aside><main class="main"><div class="brandbar"><div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Client Energy Solutions</div><div class="brand-note"><span>Supplier workspace</span><span class="tag">Estimated profile</span></div></div><section class="hero${state.step>1||state.view==='book'?' compact':''}" aria-label="Gas offer workspace"><div class="hero-content"><div class="eyebrow">NATURAL GAS / COMMERCIAL &amp; INDUSTRIAL</div><h1>Gas Offer Planner</h1><p>From market inputs to a <span class="accent">clearer gas offer.</span></p><div class="meta"><span>${esc(state.city==='Columbus'?'Columbus, Ohio':state.city)}</span><span>${state.term} months · Jan 2027 start</span><span>${state.weather_pct>0?'+':''}${state.weather_pct}% assumed HDD</span></div></div><div class="orbit" aria-hidden="true"><i></i><i></i><i></i></div></section><div class="journey" role="list" aria-label="Input sequence">${steps.map((t,i)=>`<div class="journey-item ${i+1===state.step?'current':i+1<state.step?'reached':'upcoming'}" role="listitem"${i+1===state.step?' aria-current="step"':''}><span class="journey-number">${String(i+1).padStart(2,'0')}</span><span>${esc(t)}</span></div>`).join('')}</div><section id="stage" class="stage" aria-labelledby="stage-title" data-step="${state.view==='book'?'book':state.step}">${state.notice?notice(state.notice,'success'):''}${body}</section><p class="page-footer">Estimated operating profile · All calculations and PDFs run on your device. Entries are kept only for this page session; refreshing resets them. No trades or live market requests.</p></main></div>`;
  for(const id of opened){const e=document.getElementById(id);if(e)e.open=true;}
  bind();
  if(focusHeading){document.getElementById('stage-title')?.focus({preventScroll:true});document.getElementById('stage')?.scrollIntoView({block:'start',behavior:'instant'});}
@@ -391,7 +443,7 @@ function goStep(step,advance=false) {
  if(step>1&&!state.customer.trim())return;
  if(step>3&&current.market_error)return;
  if(advance&&current.errors.length)return;
- state.step=step;state.furthest=Math.max(state.furthest,step);state.notice='';render({focusHeading:true});
+ state.step=step;state.furthest=Math.max(state.furthest,step);state.notice='';state.view='steps';state.book_msg='';state.book_prompt=false;render({focusHeading:true});
 }
 function csvText(curve){return 'month,forward_usd_mmbtu,basis_usd_mmbtu\n'+curve.map(r=>[r.month,r.forward_usd_mmbtu??'',r.basis_usd_mmbtu??''].join(',')).join('\n')+'\n';}
 function saveBlob(text,name,type){const blob=new Blob([text],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -455,10 +507,24 @@ function bind() {
   try{downloadProposal(current.snapshot,{internal});if(status)status.textContent='Anonymous PDF prepared.';}
   catch{if(status)status.textContent='The PDF could not be created. Please reload the page and try again.';}
  });
+ document.getElementById('save-book')?.addEventListener('click',()=>saveToBook());
+ document.getElementById('book-replace')?.addEventListener('click',()=>saveToBook('replace'));
+ document.getElementById('book-add')?.addEventListener('click',()=>saveToBook('add'));
+ document.getElementById('book-cancel')?.addEventListener('click',()=>{state.book_prompt=false;render();});
+ app.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click',()=>{state.view=el.dataset.view;state.notice='';render({focusHeading:true});}));
+ app.querySelectorAll('[data-book-id]').forEach(row=>{
+  const open=()=>{const entry=state.book.find(e=>e.id===row.dataset.bookId);if(entry)reopenEntry(entry);};
+  row.addEventListener('click',event=>{if(!event.target.closest('button'))open();});
+  row.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target===row){event.preventDefault();open();}});
+ });
+ app.querySelectorAll('[data-book-remove]').forEach(el=>el.addEventListener('click',()=>{state.book=state.book.filter(e=>e.id!==el.dataset.bookRemove);render();}));
+ document.getElementById('book-clear-examples')?.addEventListener('click',()=>{state.book=state.book.filter(e=>!e.example);render();});
+ document.getElementById('book-csv')?.addEventListener('click',()=>saveBlob(bookCsv(state.book),'offer-book.csv','text/csv;charset=utf-8'));
+ document.getElementById('book-monthly-csv')?.addEventListener('click',()=>saveBlob(monthlyCsv(state.book),'offer-book-monthly.csv','text/csv;charset=utf-8'));
 }
 try {
  const response=await fetch(new URL('./data/model.json',import.meta.url));
- if(!response.ok)throw Error('Reference data could not be loaded.');data=await response.json();render();
+ if(!response.ok)throw Error('Reference data could not be loaded.');data=await response.json();state.book=sampleEntries(data);render();
 } catch(error) {
  app.setAttribute('aria-busy','false');app.innerHTML=`<main class="loading"><h1>Gas Offer Planner</h1>${notice(error.message||'The planner could not be loaded.','error')}<p>Please reload the page. If this continues, the deployment may be missing an application asset.</p><button class="button primary" id="reload">Reload planner</button></main>`;
  document.getElementById('reload')?.addEventListener('click',()=>location.reload());
