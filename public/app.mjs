@@ -187,18 +187,18 @@ function stageFive(d) {
 }
 function profileChart(offer) {
  const rows=offer.months,max=Math.max(1,...rows.flatMap(x=>[x.block_mmbtu,x.modeled_use_mmbtu])),w=800,h=240,pad=38,bar=(w-pad*2)/rows.length;
- let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Monthly proposed or agreed gas blocks compared with modeled usage"><line x1="${pad}" y1="${h-32}" x2="${w-10}" y2="${h-32}" stroke="#ddd3eb"/>`;
- for(let t=0;t<4;t++){let y=h-32-t*(h-60)/3;svg+=`<text x="${pad-7}" y="${y+3}" text-anchor="end" font-size="10" fill="#776586">${Math.round(max*t/3)}</text>`;}
- rows.forEach((r,i)=>{const x=pad+i*bar;for(const [j,key,color]of [[0,'block_mmbtu','#7c3aed'],[1,'modeled_use_mmbtu','#9e97b4']]){const height=r[key]/max*(h-60);svg+=`<rect x="${x+bar*.12+j*bar*.36}" y="${h-32-height}" width="${Math.max(2,bar*.31)}" height="${height}" rx="2" fill="${color}"><title>${esc(r.month)}: ${number(r[key],1)} MMBtu</title></rect>`;}if(rows.length===12||i%2===0)svg+=`<text x="${x+bar*.48}" y="${h-11}" text-anchor="middle" fill="#776586" font-size="9">${esc(r.month.slice(2))}</text>`;});
+ let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Monthly proposed or agreed gas blocks compared with modeled usage"><line x1="${pad}" y1="${h-32}" x2="${w-10}" y2="${h-32}" stroke="#e6e8eb"/>`;
+ for(let t=0;t<4;t++){let y=h-32-t*(h-60)/3;svg+=`<text x="${pad-7}" y="${y+3}" text-anchor="end" font-size="10" fill="#7b838c">${Math.round(max*t/3)}</text>`;}
+ rows.forEach((r,i)=>{const x=pad+i*bar;for(const [j,key,color]of [[0,'block_mmbtu','#b3202f'],[1,'modeled_use_mmbtu','#8b939c']]){const height=r[key]/max*(h-60);svg+=`<rect x="${x+bar*.12+j*bar*.36}" y="${h-32-height}" width="${Math.max(2,bar*.31)}" height="${height}" rx="2" fill="${color}"><title>${esc(r.month)}: ${number(r[key],1)} MMBtu</title></rect>`;}if(rows.length===12||i%2===0)svg+=`<text x="${x+bar*.48}" y="${h-11}" text-anchor="middle" fill="#7b838c" font-size="9">${esc(r.month.slice(2))}</text>`;});
  return `<div class="chart">${svg}</svg><div class="chart-legend"><span>${locked()?'Agreed':'Proposed'} blocks</span><span>Modeled usage</span></div></div>`;
 }
 function riskChart(risk) {
  const rows=risk.histogram??[];if(!rows.length)return '';
  const w=800,h=240,pad=40,bw=(w-pad*2)/rows.length,max=Math.max(1,...rows.flatMap(r=>[r.matched_count,r.unhedged_count]));
- let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Distribution of shortfall: matched hedge loss is zero; unhedged commodity shortfall varies"><line x1="${pad}" y1="${h-35}" x2="${w-12}" y2="${h-35}" stroke="#ddd3eb"/>`;
- rows.forEach((r,i)=>{for(const[key,color]of [['unhedged_count','#9e97b4'],['matched_count','#7c3aed']]){const height=r[key]/max*(h-65);svg+=`<rect x="${pad+i*bw}" y="${h-35-height}" width="${Math.max(2,bw-1)}" height="${height}" fill="${color}" opacity=".75"><title>${key==='matched_count'?'Matched hedges':'Without hedges'}: ${money(r.start,0)} to ${money(r.end,0)}, ${number(r[key]/risk.n_sims*100,1)}% of draws</title></rect>`;}});
- const last=rows.at(-1);svg+=`<text x="${pad}" y="${h-13}" fill="#776586" font-size="10">$0</text><text x="${w-15}" y="${h-13}" text-anchor="end" fill="#776586" font-size="10">${money(last.end,0)}</text>`;
- return `<div class="chart">${svg}</svg><div class="chart-legend"><span>Matched hedges</span><span>Without hedges</span></div></div>`;
+ let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Distribution of shortfall: matched hedge loss is zero; unhedged commodity shortfall varies"><line x1="${pad}" y1="${h-35}" x2="${w-12}" y2="${h-35}" stroke="#e6e8eb"/>`;
+ rows.forEach((r,i)=>{for(const[key,color]of [['unhedged_count','#d9342b'],['matched_count','#12a878']]){const height=r[key]/max*(h-65);svg+=`<rect x="${pad+i*bw}" y="${h-35-height}" width="${Math.max(2,bw-1)}" height="${height}" fill="${color}" opacity=".75"><title>${key==='matched_count'?'Matched hedges':'Without hedges'}: ${money(r.start,0)} to ${money(r.end,0)}, ${number(r[key]/risk.n_sims*100,1)}% of draws</title></rect>`;}});
+ const last=rows.at(-1);svg+=`<text x="${pad}" y="${h-13}" fill="#7b838c" font-size="10">$0</text><text x="${w-15}" y="${h-13}" text-anchor="end" fill="#7b838c" font-size="10">${money(last.end,0)}</text>`;
+ return `<div class="chart">${svg}</svg><div class="chart-legend risk"><span>Matched hedges</span><span>Without hedges</span></div></div>`;
 }
 const signed = (value,d=4) => value == null || !Number.isFinite(Number(value)) ? 'Pending' : (value<0?'−':'')+money(Math.abs(value),d);
 const shortLabels = {credit_allowance:'Credit',residual_risk:'Residual risk'};
@@ -206,20 +206,20 @@ function priceBuildChart(build) {
  const bars=priceBuildBars(build),levels=bars.flatMap(b=>[b.from,b.to]),w=800,h=300,left=56,right=12,top=40,bottom=58;
  const hi0=Math.max(0,...levels),lo0=Math.min(0,...levels),span=(hi0-lo0)||1,hi=hi0+span*.06,lo=lo0<0?lo0-span*.06:0;
  const y=v=>top+(hi-v)/(hi-lo)*(h-top-bottom),slot=(w-left-right)/bars.length,bw=slot*.62;
- let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Price build in dollars per MMBtu, from Henry Hub to ${esc(build.total_label)}. The same numbers are in the table below."><defs><pattern id="pb-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f3effa"/><line x1="0" y1="0" x2="0" y2="7" stroke="#9e97b4" stroke-width="2.4"/></pattern></defs>`;
- for(let t=0;t<=4;t++){const v=lo+(hi-lo)*t/4,gy=y(v);svg+=`<line x1="${left}" y1="${gy}" x2="${w-right}" y2="${gy}" stroke="${t===0?'#cfc6de':'#ece7f4'}"/><text x="${left-8}" y="${gy+3.5}" text-anchor="end" font-size="10" fill="#776586">${v<0?'−':''}$${Math.abs(v).toFixed(2)}</text>`;}
- if(lo<0)svg+=`<line x1="${left}" y1="${y(0)}" x2="${w-right}" y2="${y(0)}" stroke="#776586" stroke-dasharray="3 3"/>`;
+ let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Price build in dollars per MMBtu, from Henry Hub to ${esc(build.total_label)}. The same numbers are in the table below."><defs><pattern id="pb-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f1f3f5"/><line x1="0" y1="0" x2="0" y2="7" stroke="#8b939c" stroke-width="2.4"/></pattern></defs>`;
+ for(let t=0;t<=4;t++){const v=lo+(hi-lo)*t/4,gy=y(v);svg+=`<line x1="${left}" y1="${gy}" x2="${w-right}" y2="${gy}" stroke="${t===0?'#d8dde2':'#eceff2'}"/><text x="${left-8}" y="${gy+3.5}" text-anchor="end" font-size="10" fill="#7b838c">${v<0?'−':''}$${Math.abs(v).toFixed(2)}</text>`;}
+ if(lo<0)svg+=`<line x1="${left}" y1="${y(0)}" x2="${w-right}" y2="${y(0)}" stroke="#7b838c" stroke-dasharray="3 3"/>`;
  let previous=null;
  bars.forEach((b,i)=>{
   const x=left+i*slot+(slot-bw)/2,cx=x+bw/2;
-  if(previous!==null&&!b.total)svg+=`<line x1="${x-(slot-bw)}" y1="${y(previous)}" x2="${x}" y2="${y(previous)}" stroke="#c9c0d8" stroke-dasharray="2 3"/>`;
+  if(previous!==null&&!b.total)svg+=`<line x1="${x-(slot-bw)}" y1="${y(previous)}" x2="${x}" y2="${y(previous)}" stroke="#c4cbd2" stroke-dasharray="2 3"/>`;
   let yTop,height,fill,label;
   if(b.pending){const level=b.total?0:b.from;yTop=y(level)-9;height=18;fill='url(#pb-hatch)';label='Pending';}
-  else{yTop=y(Math.max(b.from,b.to));height=Math.max(2,Math.abs(y(b.from)-y(b.to)));fill=b.total?'#201a27':b.key==='margin'?'#12a878':b.value<0?'#f08a3c':'#7c3aed';label=signed(b.value);}
+  else{yTop=y(Math.max(b.from,b.to));height=Math.max(2,Math.abs(y(b.from)-y(b.to)));fill=b.total?'#16191c':b.key==='margin'?'#12a878':b.value<0?'#f08a3c':'#2f6f8f';label=signed(b.value);}
   const title=`${b.label}: ${b.pending?'Pending':signed(b.value)} per MMBtu`;
-  svg+=`<rect x="${x}" y="${yTop}" width="${bw}" height="${height}" rx="4" fill="${fill}"${b.pending?' stroke="#9e97b4" stroke-dasharray="3 2"':''}><title>${esc(title)}</title></rect><text x="${cx}" y="${yTop-7}" text-anchor="middle" font-size="11" font-weight="${b.total?700:500}" fill="${b.pending?'#776586':'#19161f'}">${esc(label)}</text>`;
+  svg+=`<rect x="${x}" y="${yTop}" width="${bw}" height="${height}" rx="4" fill="${fill}"${b.pending?' stroke="#8b939c" stroke-dasharray="3 2"':''}><title>${esc(title)}</title></rect><text x="${cx}" y="${yTop-7}" text-anchor="middle" font-size="11" font-weight="${b.total?700:500}" fill="${b.pending?'#7b838c':'#1c2024'}">${esc(label)}</text>`;
   const name=b.total?b.label:shortLabels[b.key]??b.label,parts=name.length>10&&name.includes(' ')?[name.slice(0,name.indexOf(' ')),name.slice(name.indexOf(' ')+1)]:[name];
-  svg+=`<text x="${cx}" y="${h-bottom+18}" text-anchor="middle" font-size="10.5" fill="${b.total?'#19161f':'#63566f'}" font-weight="${b.total?700:400}">${parts.map((t,j)=>`<tspan x="${cx}" dy="${j?12:0}">${esc(t)}</tspan>`).join('')}</text>`;
+  svg+=`<text x="${cx}" y="${h-bottom+18}" text-anchor="middle" font-size="10.5" fill="${b.total?'#1c2024':'#4a525b'}" font-weight="${b.total?700:400}">${parts.map((t,j)=>`<tspan x="${cx}" dy="${j?12:0}">${esc(t)}</tspan>`).join('')}</text>`;
   if(!b.pending)previous=b.to;
  });
  return `${svg}</svg>`;
