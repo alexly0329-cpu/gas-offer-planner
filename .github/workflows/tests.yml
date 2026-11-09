@@ -1,9 +1,15 @@
 name: Planner checks
-on: [push, pull_request, workflow_dispatch]
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  model:
+  browser:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -11,4 +17,27 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - run: node tests/model.test.js
+      - name: Verify browser calculations and anonymous reports
+        run: node --test web-tests/*.test.mjs
+      - name: Verify Netlify publish assets
+        run: node scripts/check-web.mjs
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install tested dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Check dependency compatibility
+        run: python -m pip check
+      - name: Check browser reference data against Python
+        run: python scripts/export-browser-data.py --check
+      - name: Run planner tests
+        run: python -m unittest discover -v

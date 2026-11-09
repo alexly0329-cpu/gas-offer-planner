@@ -1,48 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>West Gas Planner</title>
-<meta name="description" content="Fuel buy planner and shareable report creator built on public purchase-order and invoice records.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b3202f'/%3E%3Cpath d='M16 6c4 5 7 8 7 12a7 7 0 0 1-14 0c0-2 1-4 3-6 0 2 1 3 2 3 0-3 0-6 2-9z' fill='%23fff'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A guided supplier-side natural gas offer planner with transparent estimates, cash planning and anonymous proposals.">
+  <meta name="theme-color" content="#7c3aed">
+  <title>Gas Offer Planner</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%237c3aed'/%3E%3Cpath d='M20 18h10v10H20zm15 0h10v10H35zM20 33h10v10H20zm15 0h10v10H35z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./vendor/jspdf.umd.min.js"></script>
+  <script type="module" src="./app.mjs"></script>
 </head>
 <body>
-<div class="app">
-  <aside class="side">
-    <a class="brand" href="#overview" aria-label="West Gas Planner home">
-      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 6c4 5 7 8 7 12a7 7 0 0 1-14 0c0-2 1-4 3-6 0 2 1 3 2 3 0-3 0-6 2-9z" fill="#fff"/></svg>
-      <span><b>West Gas</b> Planner</span>
-    </a>
-    <nav id="nav" aria-label="Sections"></nav>
-    <p class="side-foot">Unofficial prototype.<br>Demo data: City of Columbus public records, not Cenovus data.</p>
-  </aside>
-
-  <main id="main">
-    <header class="banner">
-      <div class="logo-tile" aria-hidden="true"><svg viewBox="0 0 32 32" width="34" height="34"><path d="M16 5c4.4 5.4 8 8.8 8 13.2a8 8 0 0 1-16 0c0-2.4 1.2-4.6 3.4-6.6.2 2.2 1.2 3.4 2.4 3.4C13.8 11.6 13.8 8.4 16 5z" fill="#fff"/></svg></div>
-      <div class="b-main"><h1>Diesel buy planner</h1><div class="chips" id="chips"></div></div>
-      <div class="b-act"><button class="btn dark" id="btnSettings">Settings</button><button class="btn dark" id="btnExport">Export</button></div>
-    </header>
-    <div id="tabs"></div>
-    <div id="view" class="view"></div>
-  </main>
-</div>
-
-<dialog id="dlg"><button class="x" data-close aria-label="Close">×</button><div id="dlgBody"></div></dialog>
-<dialog id="dlgSet"><button class="x" data-close aria-label="Close">×</button>
-  <h2>Settings</h2>
-  <p class="sub">Load your own data file. It must follow the <code>data.json</code> schema in this folder (see README). Data stays in your browser.</p>
-  <label class="btn ghost filebtn">Load data (.json)<input id="fileIn" type="file" accept="application/json,.json" hidden></label>
-  <button class="btn ghost" id="btnDemo">Restore demo data</button>
-  <p class="foot" id="dataMsg" role="status"></p>
-</dialog>
-
-<script src="data.js"></script>
-<script src="charts.js"></script>
-<script src="model.js"></script>
-<script src="report.js"></script>
-<script src="app.js"></script>
+  <a class="skip-link" href="#stage">Skip to planner</a>
+  <div id="app" aria-busy="true"><main class="loading"><span class="loading-dot"></span><h1>Gas Offer Planner</h1><p>Preparing your workspace…</p></main></div>
+  <noscript><p class="notice">Please enable JavaScript to use the planner. Calculations run on your device.</p></noscript>
 </body>
 </html>
