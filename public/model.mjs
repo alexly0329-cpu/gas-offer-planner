@@ -274,3 +274,24 @@ export function financialPlan(offer,options={}){
   }
   return result;
 }
+
+/** Price build: the offer's own volume-weighted figures, split into the steps that add up to the offer price. */
+export const PRICE_BUILD_STEPS=[['hh','Henry Hub'],['basis','Regional basis'],['fuel','Fuel'],['supplier_fee','Supplier fee'],['financing','Financing'],['residual_risk','Residual risk'],['credit_allowance','Credit allowance'],['margin','Margin']];
+export function priceBuild(offer){
+  const weighted=key=>offer.months.some(row=>row[key]===null||row[key]===undefined)?null:finite(sum(offer.months.map(row=>row.block_mmbtu*row[key]))/offer.volume);
+  const value={hh:weighted('hh_reference'),basis:weighted('basis_reference'),fuel:offer.fuel_adder,margin:offer.margin};
+  for(const key of ALLOWANCES)value[key]=offer.costs[key];
+  const steps=PRICE_BUILD_STEPS.map(([key,label])=>({key,label,value:value[key]??null,pending:value[key]==null}));
+  const total=offer.fixed_price??null;
+  return {steps,total,total_label:total===null?'Pending':offer.missing_inputs.length?'Partial subtotal':'Offer price'};
+}
+/** Waterfall geometry in USD/MMBtu: each step runs from the previous level to the next; Pending steps add nothing. */
+export function priceBuildBars(build){
+  let level=0;
+  const bars=build.steps.map(step=>{
+    const from=level,to=step.pending?level:level+step.value;level=to;
+    return {key:step.key,label:step.label,from,to,value:step.value,pending:step.pending,total:false};
+  });
+  bars.push({key:'total',label:build.total_label,from:0,to:build.total??0,value:build.total,pending:build.total===null,total:true});
+  return bars;
+}

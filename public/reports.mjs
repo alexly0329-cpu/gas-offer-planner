@@ -1,6 +1,7 @@
 /* Anonymous PDFs: only controlled labels, calendar dates and finite numbers are rendered. */
 const PENDING='Pending';
 const COMPONENTS={supplier_fee:'Supplier fee',financing:'Financing',residual_risk:'Residual risk allowance',credit_allowance:'Credit allowance'};
+const BUILD_LABELS={hh:'Henry Hub, volume-weighted',basis:'Regional basis, volume-weighted',fuel:'Procurement fuel adder',...COMPONENTS,margin:'Target margin before unmodeled costs'};
 const COLORS={ink:'#26242D',muted:'#64606F',lavender:'#EEE8FB',line:'#DAD1EB',paper:'#F9F7FE',white:'#FFFFFF'};
 const finite=value=>{
  if(value===null||value===undefined||typeof value==='boolean'||(typeof value==='string'&&!value.trim()))return null;
@@ -99,7 +100,10 @@ export function createProposalPdf(snapshot={}, {internal=false}={}){
  }else{
   p('Modeled customer usage: '+fmt(s.expected_usage,1)+' MMBtu. Market as of: '+dateText(s.market_as_of)+'.',{size:8.5,color:COLORS.muted,after:11});
   heading('02 / How the price is built');
-  table([['Component','USD / MMBtu'],['Henry Hub + regional basis, weighted by monthly blocks',fmt(s.commodity,4,true)],['Procurement fuel adder',fmt(s.fuel_adder,4,true)],...Object.entries(COMPONENTS).map(([key,label])=>[label,fmt(components[key],4,true)]),['Target margin before unmodeled costs',fmt(s.margin,4,true)]],[390,138],{size:8.5,padding:4,minHeight:20});
+  const build=Array.isArray(object(s.price_build).steps)?object(s.price_build).steps:null,usd=value=>{const n=finite(value);return n===null?PENDING:(n<0?'-':'')+fmt(Math.abs(n),4,true);};
+  const buildRows=build?Object.entries(BUILD_LABELS).map(([key,label])=>[label,usd(object(build.find(x=>object(x).key===key)).value)]).concat([[price!==null&&!complete?'Partial subtotal':'Offer price',fmt(s.price,4,true)]])
+   :[['Henry Hub + regional basis, weighted by monthly blocks',fmt(s.commodity,4,true)],['Procurement fuel adder',fmt(s.fuel_adder,4,true)],...Object.entries(COMPONENTS).map(([key,label])=>[label,fmt(components[key],4,true)]),['Target margin before unmodeled costs',fmt(s.margin,4,true)]];
+  table([['Component','USD / MMBtu'],...buildRows],[390,138],{size:8.5,padding:4,minHeight:20});
   const demandLabel={benchmark:'Benchmark annual gas use',user_total:'User-entered annual gas use'}[s.demand_basis];
   p((demandLabel?demandLabel+': '+fmt(s.reference_annual_gas,0)+' MMBtu.':'Annual gas use basis: Pending.')+' Customer meter records have not been supplied.',{size:8.3,color:COLORS.muted,after:5});
   p(existing?'Existing-offer stress: price, blocks and original costs remain frozen. Usage is stressed at '+weather+' HDD versus history.':'New offer: '+weather+' HDD versus history reprices quantity and monthly cost weights. Reference HDD: '+fmt(s.weather_reference_hdd,0)+'.',{size:8.3,color:COLORS.muted,after:0});

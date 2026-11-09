@@ -1,4 +1,4 @@
-import {loadCase, validateCurve, buildOffer, stressOffer, simulateJointRisk, ratiosFromFinancials, assessCredit, financialPlan} from './model.mjs';
+import {loadCase, validateCurve, buildOffer, stressOffer, simulateJointRisk, ratiosFromFinancials, assessCredit, financialPlan, priceBuild, priceBuildBars} from './model.mjs';
 import {downloadProposal} from './reports.mjs';
 
 const app = document.getElementById('app');
@@ -90,7 +90,7 @@ function derive() {
       mode:locked()?'Existing stress':'New offer',weather_pct:state.weather_pct,weather_reference_hdd:sum(c.reference_hdd.slice(0,12)),credit:result.credit,
       risk:Object.fromEntries(['available','n_sims','n_unique_years','loss_p95','risk_premium','unhedged_loss_p95','scope','limitations'].map(k=>[k,result.risk[k]])),
       months:offer.months,data_notes:[],demand_basis:offer.demand_basis,reference_annual_gas:offer.annual_gas,
-      financials:result.financials,readiness:result.readiness,quote_valid_until:commercial.quote_valid_until??null,delivery_confirmed:result.readiness.delivery_confirmed};
+      price_build:priceBuild(offer),financials:result.financials,readiness:result.readiness,quote_valid_until:commercial.quote_valid_until??null,delivery_confirmed:result.readiness.delivery_confirmed};
   } catch(error) {result.errors.push(error.message || 'Check the entered values.');}
   return result;
 }
@@ -200,6 +200,38 @@ function riskChart(risk) {
  const last=rows.at(-1);svg+=`<text x="${pad}" y="${h-13}" fill="#776586" font-size="10">$0</text><text x="${w-15}" y="${h-13}" text-anchor="end" fill="#776586" font-size="10">${money(last.end,0)}</text>`;
  return `<div class="chart">${svg}</svg><div class="chart-legend"><span>Matched hedges</span><span>Without hedges</span></div></div>`;
 }
+const signed = (value,d=4) => value == null || !Number.isFinite(Number(value)) ? 'Pending' : (value<0?'−':'')+money(Math.abs(value),d);
+const shortLabels = {credit_allowance:'Credit',residual_risk:'Residual risk'};
+function priceBuildChart(build) {
+ const bars=priceBuildBars(build),levels=bars.flatMap(b=>[b.from,b.to]),w=800,h=300,left=56,right=12,top=40,bottom=58;
+ const hi0=Math.max(0,...levels),lo0=Math.min(0,...levels),span=(hi0-lo0)||1,hi=hi0+span*.06,lo=lo0<0?lo0-span*.06:0;
+ const y=v=>top+(hi-v)/(hi-lo)*(h-top-bottom),slot=(w-left-right)/bars.length,bw=slot*.62;
+ let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Price build in dollars per MMBtu, from Henry Hub to ${esc(build.total_label)}. The same numbers are in the table below."><defs><pattern id="pb-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f3effa"/><line x1="0" y1="0" x2="0" y2="7" stroke="#9e97b4" stroke-width="2.4"/></pattern></defs>`;
+ for(let t=0;t<=4;t++){const v=lo+(hi-lo)*t/4,gy=y(v);svg+=`<line x1="${left}" y1="${gy}" x2="${w-right}" y2="${gy}" stroke="${t===0?'#cfc6de':'#ece7f4'}"/><text x="${left-8}" y="${gy+3.5}" text-anchor="end" font-size="10" fill="#776586">${v<0?'−':''}$${Math.abs(v).toFixed(2)}</text>`;}
+ if(lo<0)svg+=`<line x1="${left}" y1="${y(0)}" x2="${w-right}" y2="${y(0)}" stroke="#776586" stroke-dasharray="3 3"/>`;
+ let previous=null;
+ bars.forEach((b,i)=>{
+  const x=left+i*slot+(slot-bw)/2,cx=x+bw/2;
+  if(previous!==null&&!b.total)svg+=`<line x1="${x-(slot-bw)}" y1="${y(previous)}" x2="${x}" y2="${y(previous)}" stroke="#c9c0d8" stroke-dasharray="2 3"/>`;
+  let yTop,height,fill,label;
+  if(b.pending){const level=b.total?0:b.from;yTop=y(level)-9;height=18;fill='url(#pb-hatch)';label='Pending';}
+  else{yTop=y(Math.max(b.from,b.to));height=Math.max(2,Math.abs(y(b.from)-y(b.to)));fill=b.total?'#201a27':b.key==='margin'?'#12a878':b.value<0?'#f08a3c':'#7c3aed';label=signed(b.value);}
+  const title=`${b.label}: ${b.pending?'Pending':signed(b.value)} per MMBtu`;
+  svg+=`<rect x="${x}" y="${yTop}" width="${bw}" height="${height}" rx="4" fill="${fill}"${b.pending?' stroke="#9e97b4" stroke-dasharray="3 2"':''}><title>${esc(title)}</title></rect><text x="${cx}" y="${yTop-7}" text-anchor="middle" font-size="11" font-weight="${b.total?700:500}" fill="${b.pending?'#776586':'#19161f'}">${esc(label)}</text>`;
+  const name=b.total?b.label:shortLabels[b.key]??b.label,parts=name.length>10&&name.includes(' ')?[name.slice(0,name.indexOf(' ')),name.slice(name.indexOf(' ')+1)]:[name];
+  svg+=`<text x="${cx}" y="${h-bottom+18}" text-anchor="middle" font-size="10.5" fill="${b.total?'#19161f':'#63566f'}" font-weight="${b.total?700:400}">${parts.map((t,j)=>`<tspan x="${cx}" dy="${j?12:0}">${esc(t)}</tspan>`).join('')}</text>`;
+  if(!b.pending)previous=b.to;
+ });
+ return `${svg}</svg>`;
+}
+function priceBuildPanel(o) {
+ const build=priceBuild(o),total=build.total;
+ const rows=[...build.steps.map(s=>[s.label,s.pending?'Pending':signed(s.value)]),[build.total_label,total===null?'Pending':money(total)]];
+ return `<section class="price-build" aria-labelledby="price-build-title"><div class="pb-head"><div><div class="section-label">PRICE BUILD</div><h3 id="price-build-title">How the offer price is built</h3></div><div class="pb-total"><b>${esc(total===null?'Pending':money(total))}</b><span>${esc(build.total_label)} · $/MMBtu</span></div></div>`+
+  `<div class="chart pb-chart">${priceBuildChart(build)}<div class="pb-legend"><span class="up">Adds to price</span><span class="down">Reduces price</span><span class="margin">Margin</span><span class="pending">Pending</span><span class="total">${esc(build.total_label)}</span></div></div>`+
+  table(['Component','USD/MMBtu'],rows)+
+  caption('Henry Hub and regional basis are weighted by the proposed monthly blocks, as in the offer price. A negative component pulls the price down. Pending items are not counted, so the last bar is a subtotal until every cost is supplied.')+`</section>`;
+}
 function offerPanel(d) {
  const o=d.offer,blocks=locked()?'Agreed blocks':'Proposed blocks';return `<h3>${locked()?'Existing offer stress test':'Proposed offer'}</h3>`+
  (locked()?notice(state.frozen_explicit?'Using the saved offer.':'Using the original reference offer: historical reference weather, $0.20 margin and costs pending. Save a new offer to test different agreed terms.'):'')+
@@ -208,6 +240,7 @@ function offerPanel(d) {
  `<div class="metrics">${metric('Fixed-block subtotal',money(o.block_value,2))}${metric('Target contribution before unmodeled costs',money(o.contribution,2))}</div>`+
  caption('The customer bill also includes indexed monthly deviations. Target contribution is not net profit. Transport and taxes are not included.')+
  table(['Component','USD/MMBtu'],[['Weighted Henry Hub + basis',money(o.commodity)],['Procurement fuel',money(o.fuel_adder)],...Object.entries(costNames).map(([k,v])=>[v,money(o.costs[k])]),['Target margin',money(o.margin)]])+
+ priceBuildPanel(o)+
  '<h3>Monthly gas profile</h3>'+profileChart(o)+
  (!locked()?'<button class="button" id="freeze-offer">Use this offer for stress test</button>'+caption('This stores the price, monthly blocks, cost assumptions and payment terms. Then select “Test existing offer”.'):
  `<div class="metrics">${metric('Illustrative indexed deviation settlement',money(o.deviation_value,2))}</div>`+caption('Uses the saved monthly reference indices for this example. Future actual index prices are not known.'));
