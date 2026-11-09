@@ -2,7 +2,8 @@
 const PENDING='Pending';
 const COMPONENTS={supplier_fee:'Supplier fee',financing:'Financing',residual_risk:'Residual risk allowance',credit_allowance:'Credit allowance'};
 const BUILD_LABELS={hh:'Henry Hub, volume-weighted',basis:'Regional basis, volume-weighted',fuel:'Procurement fuel adder',...COMPONENTS,margin:'Target margin before unmodeled costs'};
-const COLORS={ink:'#26242D',muted:'#64606F',lavender:'#EEE8FB',line:'#DAD1EB',paper:'#F9F7FE',white:'#FFFFFF'};
+/* Same palette as the website: slate ink, soft grey fills, one red accent, dark banner. */
+const COLORS={ink:'#1C2024',muted:'#5B636C',soft:'#F5F6F8',line:'#E6E8EB',paper:'#FFFFFF',white:'#FFFFFF',accent:'#B3202F',dark:'#16191C',tint:'#E8AEB4'};
 const finite=value=>{
  if(value===null||value===undefined||typeof value==='boolean'||(typeof value==='string'&&!value.trim()))return null;
  if(typeof value!=='number'&&typeof value!=='string')return null;
@@ -34,8 +35,11 @@ export function createProposalPdf(snapshot={}, {internal=false}={}){
  function page(first=false){
   if(pageNumber)doc.addPage();pageNumber++;y=45;
   if(first){doc.setFillColor(COLORS.paper);doc.rect(0,0,612,792,'F');}
-  doc.setFillColor(COLORS.lavender);doc.roundedRect(523,24,47,20,10,10,'F');
-  doc.setFontSize(8);doc.setTextColor(COLORS.ink);doc.text(String(pageNumber).padStart(2,'0'),546.5,37,{align:'center'});
+  doc.setFillColor(COLORS.accent);doc.roundedRect(M,16,18,18,5,5,'F');
+  doc.setFillColor(COLORS.white);doc.triangle(M+9,20,M+13.5,27,M+4.5,27,'F');doc.circle(M+9,27.5,4.5,'F');
+  text('Gas Offer Planner',M+25,28.5,9,COLORS.ink);
+  doc.setFillColor(COLORS.soft);doc.roundedRect(523,15,47,20,10,10,'F');
+  doc.setFontSize(8);doc.setTextColor(COLORS.ink);doc.text(String(pageNumber).padStart(2,'0'),546.5,28,{align:'center'});
   doc.setDrawColor(COLORS.line);doc.setLineWidth(.5);doc.line(M,762,570,762);
   text('NATURAL GAS ESTIMATE / NOT AN EXECUTABLE SUPPLIER QUOTE',M,775,6.5,COLORS.muted);
   doc.setFontSize(6.5);doc.text('PRIVATE IDENTIFIERS OMITTED',570,775,{align:'right'});
@@ -45,7 +49,7 @@ export function createProposalPdf(snapshot={}, {internal=false}={}){
   const lines=doc.splitTextToSize(String(value),width);
   doc.text(lines,M,y+size,{lineHeightFactor:leading/size});y+=lines.length*leading+after;
  }
- function kicker(value){p(value,{size:8,color:COLORS.muted,after:14});}
+ function kicker(value){p(value,{size:8,color:COLORS.accent,after:14});}
  function title(value){p(value,{size:29,leading:33,after:12});}
  function heading(value){p(value,{size:13.5,leading:17,after:7});}
  function table(rows,widths,{size=8.7,padding=6,minHeight=22}={}){
@@ -53,15 +57,16 @@ export function createProposalPdf(snapshot={}, {internal=false}={}){
    doc.setFont('helvetica','normal');doc.setFontSize(size);
    const lines=row.map((value,i)=>doc.splitTextToSize(String(value),widths[i]-padding*2));
    const h=Math.max(minHeight,...lines.map(a=>a.length*size*1.22+padding*2));
-   if(index===0){doc.setFillColor(COLORS.lavender);doc.rect(M,y,W,h,'F');}
+   if(index===0){doc.setFillColor(COLORS.soft);doc.rect(M,y,W,h,'F');}
    let x=M;doc.setTextColor(COLORS.ink);
    lines.forEach((a,i)=>{doc.text(a,x+padding,y+padding+size,{lineHeightFactor:1.22});x+=widths[i];});
    doc.setDrawColor(COLORS.line);doc.setLineWidth(.35);doc.line(M,y+h,M+W,y+h);y+=h;
   });y+=10;
  }
  function hero(status,meaning){
-  doc.setFillColor(COLORS.ink);doc.rect(M,y,W,86,'F');
-  text('PRICE / USD PER MMBtu',M+16,y+23,9,COLORS.white);text(fmt(s.price,4,true),M+16,y+64,34,COLORS.white);
+  doc.setFillColor(COLORS.dark);doc.rect(M,y,W,86,'F');
+  doc.setFillColor(COLORS.accent);doc.rect(M,y,5,86,'F');
+  text('PRICE / USD PER MMBtu',M+16,y+23,9,COLORS.tint);text(fmt(s.price,4,true),M+16,y+64,34,COLORS.white);
   text(status,M+245,y+23,10,COLORS.white);
   doc.setFontSize(9.5);doc.setTextColor(COLORS.white);
   doc.text(doc.splitTextToSize(meaning,267),M+245,y+43,{lineHeightFactor:1.3});y+=100;
