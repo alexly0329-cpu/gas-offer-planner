@@ -384,3 +384,21 @@ td input{width:115px;min-width:90px;border:1px solid var(--line);border-radius:8
  .map-label{top:84px;font-size:.88rem}
  .hero-intro{align-self:flex-start}
 }
+
+/* Shared map and editorial layout, with larger planner labels. */
+:root {font-size:18px;}
+#theme-toggle {top:10px;right:max(10px,env(safe-area-inset-right));}
+.hero-intro {align-self:flex-start;}
+.hero-intro h1 {font-size:clamp(38px,5.4vw,78px);}
+.hero-intro {padding:12px 18px 12px 0;background:linear-gradient(90deg,#132820ed,#132820b0 75%,transparent);}
+.map-markers span {z-index:2;}
+.map-markers [data-map-city="Tulsa"] {transform:translate(0,-100%);}
+.caption,small,.field label,.purpose label,.purpose legend,.tbl,.stage-description {font-size:.94rem;}
+.editorial .step-nav button {overflow-wrap:anywhere;}
+:root[data-theme="dark"] .metric.dark .label {color:#d4e2d6;}
+@media(max-width:700px){
+ .masthead {font-size:.88rem;}
+ .map-markers span {font-size:.76rem;}
+ .map-credit {font-size:.73rem;}
+ .hero-intro h1 {font-size:clamp(35px,8vw,56px);}
+}

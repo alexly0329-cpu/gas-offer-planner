@@ -396,7 +396,7 @@ function overviewView(d) {
  return title+
   `<div class="offer-spread">
    <div><span>Modeled gas use</span><strong>${number(o.expected_usage,0)}</strong><span>MMBtu over ${state.term} months</span></div>
-   <div><span>${esc(d.price_status)}</span><strong>${money(price)}</strong><span>USD / MMBtu</span></div>
+   <div><span>${esc(d.price_status)}</span><strong>${money(price)}</strong>${price==null ? '<span>Monthly market prices required</span>' : '<span>USD / MMBtu</span>'}</div>
   </div>
   <div class="offer-components">
    <div>Henry Hub + basis <strong>${money(o.commodity)}</strong></div>
@@ -460,6 +460,7 @@ function syncRegion(d) {
  document.querySelector('.map-hero').dataset.city = state.city;
  const missing = (d.market?.curve ?? []).filter(month => month.forward_usd_mmbtu == null || month.basis_usd_mmbtu == null).length;
  const status = locked() ? 'Switch to New offer to change the region.'
+  : !d.market || d.market_error ? 'Check the market inputs to review pricing.'
   : missing ? `${missing} delivery months need Henry Hub or regional basis prices.`
   : 'Monthly prices are available for this term. Check their date and source.';
  document.getElementById('region-status').textContent = status;
@@ -467,9 +468,9 @@ function syncRegion(d) {
  document.getElementById('map-label').innerHTML = `${geo[0]}<br>${geo[1]} / UNITED STATES`;
  const o = d.offer, strip = document.getElementById('intro-strip');
  const fmt = (v, dp) => v == null || !Number.isFinite(Number(v)) ? 'Pending' : Number(v).toLocaleString('en-US', {minimumFractionDigits: dp, maximumFractionDigits: dp});
- strip.querySelector('[data-k="vol"]').innerHTML = `<b>${fmt(o?.volume, 0)}</b> MMBtu modeled / ${state.term} months`;
+ strip.querySelector('[data-k="vol"]').innerHTML = `<b>${fmt(o?.expected_usage, 0)}</b> MMBtu modeled / ${state.term} months`;
  strip.querySelector('[data-k="hdd"]').innerHTML = `<b>${state.weather_pct > 0 ? '+' : ''}${state.weather_pct}%</b> assumed HDD vs history`;
- strip.querySelector('[data-k="px"]').innerHTML = `<b>${o?.fixed_price == null ? 'Pending' : '$' + fmt(o.fixed_price, 4)}</b> ${o?.fixed_price == null ? 'market prices needed' : o.pricing_status === 'Partial subtotal' ? 'USD / MMBtu partial subtotal (costs pending)' : 'USD / MMBtu illustrative price'}`;
+ strip.querySelector('[data-k="px"]').innerHTML = `<b>${o?.fixed_price == null ? 'Pending' : '$' + fmt(o.fixed_price, 4)}</b> ${o?.fixed_price == null ? 'market prices needed' : d.price_status === 'Partial subtotal' ? 'USD / MMBtu partial subtotal (costs pending)' : 'USD / MMBtu illustrative price'}`;
 }
 function render({focusHeading=false}={}) {
  const opened=[...app.querySelectorAll('details[open]')].map(e=>e.id);
