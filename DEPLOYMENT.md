@@ -1,10 +1,10 @@
-# Netlify deployment
+# Optional deployment — not performed
 
 The browser planner is served from `public/`. It preserves the six guided steps, estimated financial logic, charts and two anonymous PDFs. Entries and PDF generation stay on the visitor's device. No Python server, customer database, analytics library or external pricing API is needed.
 
 ## Settings
 
-The root `netlify.toml` sets build command `node scripts/check-web.mjs`, publish directory `public`, and Node.js24. Keep the repository base at its root. File-based settings override matching Netlify UI settings. Pushing `main` triggers the existing connected production deployment. Do not publish the repository root: the Python files are calculation references, not browser entrypoints.
+The root `netlify.toml` sets build command `node scripts/check-web.mjs`, publish directory `public`, and Node.js24. Keep the repository base at its root. File-based settings override matching Netlify UI settings. This delivery has not been connected to a hosting account or pushed to GitHub. If you later connect a repository to hosting, pushes may trigger that service’s configured deployments. Do not publish the repository root: the Python files are calculation references, not browser entrypoints.
 
 ## Local preview and checks
 
@@ -14,7 +14,7 @@ node scripts/check-web.mjs
 python3 -m http.server 8503 --directory public
 ```
 
-Open `http://localhost:8503`. Opening index.html directly as a local file is not supported because modules and reference-data loading need a web server. The original Streamlit app remains available using Start.command or README.md instructions.
+Open `http://localhost:8503`. Opening index.html directly as a local file is not supported because modules and reference-data loading need a web server. The original Streamlit app remains available using Start-Python.command or RESEARCH.md instructions.
 
 To regenerate normalized data and exact fixed-seed scenario weights after changing the Python reference/data, use the pinned Python environment:
 
